@@ -44,7 +44,7 @@ exports.handler = async function(event) {
   let db = firebase.firestore()
 
   // ask Firebase for the course that corresponds to the course number, wait for the response
-  let courseQuery = await db.collection('courses').where(`courseNumber`, `==`, courseNumber).get()
+  let courseQuery = await db.collection(`courses`).where(`courseNumber`, `==`, courseNumber).get()
 
   // get the first document from the query
   let course = courseQuery.docs[0]
@@ -65,7 +65,7 @@ exports.handler = async function(event) {
   returnValue.sections = []
 
   // ask Firebase for the sections corresponding to the Document ID of the course, wait for the response
-  let sectionsQuery = await db.collection('sections').where(`courseId`, `==`, courseId).get()
+  let sectionsQuery = await db.collection(`sections`).where(`courseId`, `==`, courseId).get()
 
   // get the documents from the query
   let sections = sectionsQuery.docs
@@ -82,7 +82,7 @@ exports.handler = async function(event) {
     let sectionObject = {}
 
     // ask Firebase for the lecturer with the ID provided by the section; hint: read "Retrieve One Document (when you know the Document ID)" in the reference
-    let lecturerQuery = await db.collection('lecturers').doc(sectionData.lecturerId).get()
+    let lecturerQuery = await db.collection(`lecturers`).doc(sectionData.lecturerId).get()
 
     // get the data from the returned document
     let lecturer = lecturerQuery.data()
@@ -94,6 +94,46 @@ exports.handler = async function(event) {
     returnValue.sections.push(sectionObject)
 
     // 🔥 your code for the reviews/ratings goes here
+
+    // set a new array for reviews as part of the return value
+    returnValue.reviews = []
+
+    // ask firebase for the reviews with the id provided by the section
+    let reviewsQuery = await db.collection(`reviews`).where(`sectionId`, `==`, sectionId).get()
+
+    // get the returned documents from the query
+    let reviews = reviewsQuery.docs 
+
+    let ratingSum = 0
+
+    // loop through the documents
+    for (let i=0; i<reviews.length; i++) {
+      
+      ratingSum += reviews[i].rating
+
+      // get the document id of the review
+      let reviewsId = reviews[i].id
+      
+      // get the data from the review
+      let reviewsData = reviews[i].data()
+
+      // create a reviews Object to be added to the return value of our lambda
+      let reviewsObject = {}
+
+      // add the count of total reviews to the section object
+      reviewsObject.numberOfReviews = reviewsQuery.size
+      reviewsObject.averageRating = reviewsData.rating
+      
+      // add the reviews object to the returned value
+      returnValue.reviews.push(reviewsObject)
+
+
+
+
+
+    }
+
+    
   }
 
   // return the standard response
